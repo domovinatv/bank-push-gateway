@@ -1,0 +1,13 @@
+node_modules/
+.wrangler/
+.dev.vars
+*.apk
+*.xapk
+*.aab
+local.properties
+.gradle/
+build/
+.idea/
+.DS_Store
+# sirovi uzorci obavijesti sadrže stvarne transakcije — nikad u git
+samples/raw/
