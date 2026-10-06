@@ -1,0 +1,2 @@
+# Kopiraj u worker/.dev.vars (gitignored). Tajne generiraj s: openssl rand -hex 32
+DEVICE_SECRETS={"gw-dev-01":"zamijeni-me"}

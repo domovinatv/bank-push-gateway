@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bank-push-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "vars": {
+    // Uređaji kojima je dopuštena autentikacija tokenom umjesto HMAC-a
+    // (MacroDroid ne može potpisati tijelo zahtjeva). Zarezom odvojeno.
+    "TOKEN_AUTH_DEVICES": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bank_push_gateway",
+      // Placeholder za lokalni razvoj. Pravi ID tek nakon `wrangler d1 create`
+      // na računu koji odobri vlasnik.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+  // DEVICE_SECRETS: `wrangler secret put DEVICE_SECRETS` (produkcija) ili
+  // worker/.dev.vars (lokalno). JSON: {"gw-01": "<tajna>"}
+}
