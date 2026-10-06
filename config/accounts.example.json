@@ -1,0 +1,17 @@
+{
+  "$comment": "Kopiraj u config/accounts.local.json (gitignored). Nikad ne commitati pravu verziju.",
+  "accounts": [
+    {
+      "id": "hpb-poslovni",
+      "bank": "hpb",
+      "package": "co.infinum.hpb",
+      "channel_ids": [],
+      "iban": "HR0000000000000000000",
+      "holder_name": "Primjer d.o.o.",
+      "account_hint": "…0000"
+    }
+  ],
+  "devices": [
+    { "device_id": "gw-01", "accounts": ["hpb-poslovni"] }
+  ]
+}

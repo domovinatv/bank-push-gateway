@@ -20,10 +20,14 @@ Istraživanje: `donate.domovina.ai/docs/research/` (2026-10-06), sažetak u
 | `worker/` | `/ingest`: spremi sirovo → dedup → parser po banci → uparivanje → webhook |
 | `docs/` | arhitektura, sheme, nalazi po banci |
 
-Ništa od toga još ne postoji — vidi [`docs/architecture.md`](docs/architecture.md)
+Ništa od toga još ne postoji — plan je u [`docs/plan.md`](docs/plan.md), arhitektura u [`docs/architecture.md`](docs/architecture.md)
 za plan i redoslijed.
 
 ## Status
 
 Faza 0: mod „samo bilježi" — skupiti stvarne obavijesti za svaku banku
 (obična i instant uplata) prije pisanja ijednog parsera.
+
+## Licenca
+
+MIT. Podaci o računima nisu dio repoa (`config/*.local.json`, gitignored).

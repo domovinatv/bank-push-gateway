@@ -11,3 +11,9 @@ build/
 .DS_Store
 # sirovi uzorci obavijesti sadrže stvarne transakcije — nikad u git
 samples/raw/
+
+# podaci o računima, uređajima i tajne — samo lokalno (vidi docs/plan.md §Podaci)
+config/*.local.json
+config/*.local.jsonc
+worker/.dev.vars
+android/app/src/main/assets/config.local.json

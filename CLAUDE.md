@@ -15,6 +15,7 @@ webhook za dolazne uplate. Primarni korisnik: donacije DOMOVINA projekta
 | Izvor istine | dnevni izvod / PSD2 usklađivanje | push je okidač, nema pravnu snagu |
 | Platforma | Android (`NotificationListenerService`) | iOS nema API za čitanje tuđih obavijesti |
 | Server | Cloudflare Worker (+ D1/R2) | konzistentno s DOMOVINA infrastrukturom |
+| Repo | javni, MIT | kod i parseri su javni; podaci o računima nisu (vidi `docs/plan.md` §Podaci) |
 
 ## Sigurnost
 
@@ -26,6 +27,13 @@ webhook za dolazne uplate. Primarni korisnik: donacije DOMOVINA projekta
   ne commitati ih. Za testove koristiti anonimizirane fixtureove.
 - Ne koristiti velike tuđe forwardere (npr. SmsForwarder) na uređaju s
   bankovnom sesijom — samo mali, pregledan kod.
+
+## Podaci o računima
+
+IBAN-ovi, imena vlasnika, mapiranje uređaj → račun i tajne žive samo u
+gitignored datotekama (`config/*.local.json`, `worker/.dev.vars`) ili kao
+`wrangler secret`. Predložak: `config/accounts.example.json`. Prije commita
+provjeri `git diff --cached` za `HR\d{19}` / `EE\d{18}` i stvarna imena.
 
 ## Konvencije
 

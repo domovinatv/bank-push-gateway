@@ -1,0 +1,62 @@
+# Plan
+
+## Odluke (6.10.2026.)
+
+- **Javni repo, MIT licenca.** Kod, sheme, parseri i dokumentacija su javni.
+- **Podaci o računima nikad u gitu.** IBAN-ovi, imena vlasnika, mapiranje
+  uređaj → račun, HMAC tajne i URL-ovi pretplatnika žive samo lokalno ili kao
+  tajne u Cloudflareu (vidi §Podaci).
+- **Sirovi uzorci obavijesti nikad u gitu** (sadrže imena uplatitelja, iznose,
+  stanja). Testni fixturei su ručno anonimizirani.
+- **Parseri su javni.** Format teksta obavijesti banke nije tajna; javni parseri
+  su korisni svakome tko gradi isto.
+
+## Podaci: gdje što živi
+
+| Podatak | Gdje | U gitu |
+|---|---|---|
+| Računi (IBAN, vlasnik, banka, package, channel_id) | `config/accounts.local.json` | ❌ (`config/accounts.example.json` je predložak) |
+| HMAC tajna po uređaju | `wrangler secret put DEVICE_SECRETS` / `worker/.dev.vars` lokalno | ❌ |
+| Pretplatnici webhooka (URL + tajna) | D1 tablica ili `wrangler secret` | ❌ |
+| Konfiguracija Android kolektora (endpoint, device_id, tajna, allowlist) | unos u aplikaciji ili `android/…/assets/config.local.json` | ❌ |
+| Sirovi događaji | D1 (+ R2) u produkciji; `samples/raw/` lokalno | ❌ |
+| Anonimizirani fixturei za parsere | `worker/test/fixtures/` | ✅ |
+
+Prije svakog commita: `git diff --cached` ne smije sadržavati `HR\d{19}`,
+`EE\d{18}` ni stvarna imena. (Kandidat za pre-commit hook u fazi 1.)
+
+## Faze
+
+### Faza 0: samo bilježi
+- `worker/`: CF Worker s `POST /ingest` (HMAC provjera, D1 insert sirovog
+  događaja, dedup po `device_id + seq`), `GET /health`, heartbeat endpoint.
+- Kolektor: najprije MacroDroid (okidač „Notification received" za allowlist
+  paketa → HTTP POST); dokumentirati recept u `docs/collector-macrodroid.md`.
+- Test: uplate po 1 € (obična i instant) između vlasnikovih računa
+  (PBZ osobni → HPB poslovni i obrnuto); bilježiti vrijeme slanja.
+- Izlaz: `docs/banks/<banka>.md` s anonimiziranim primjerom obavijesti,
+  `channel_id`, kašnjenjem, ima li poziv na broj / ime uplatitelja.
+
+### Faza 1: parseri
+- Parser po banci (`worker/src/parsers/<bank>.ts`), čista funkcija
+  `raw → NormalizedEvent | null`; svaki anonimizirani uzorak = test (vitest).
+- Ponovno parsiranje svih sirovih događaja iz D1 nakon promjene parsera.
+- Pre-commit hook za IBAN/imena.
+
+### Faza 2: uparivanje + webhook
+- Otvorene donacije s jedinstvenim iznosom (1,00 / 1,01 / …) i TTL-om, ili
+  poziv na broj ako ga banka prenosi.
+- Potpisani `account.credit` webhook pretplatnicima (MPT / donate / pay).
+- Isti normalizirani format i za Monerium webhook i SMS izvor.
+
+### Faza 3: pouzdanost
+- Vlastita Android aplikacija (fork `ItsAzni/NotificationForwarder`, MIT):
+  allowlist, sirovi `extras`, Room red, retry, HMAC, heartbeat,
+  isključena optimizacija baterije.
+- Cron: alarm kad heartbeat izostane; dnevno usklađivanje (izvod ili PSD2 AIS).
+
+## Otvoreno
+- Erste: postoji li ErsteConnect Premium webhook za manje klijente (ako da,
+  za Erste ne treba gateway).
+- Android 15 „sensitive notifications": cenzurira li obavijest o priljevu.
+- Jesu li push obavijesti za poslovne račune iste kao za osobne (po banci).
