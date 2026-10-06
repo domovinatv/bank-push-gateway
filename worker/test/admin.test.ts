@@ -44,6 +44,8 @@ describe("admin: pristup", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-security-policy")).toContain("script-src 'self'");
     expect(res.headers.get("x-frame-options")).toBe("DENY");
+    // "no-referrer" bi natjerao preglednik da na <form> POST pošalje `Origin: null`.
+    expect(res.headers.get("referrer-policy")).toBe("same-origin");
     expect(await res.text()).toContain("Prijava passkeyem");
   });
 
@@ -69,6 +71,16 @@ describe("admin: pristup", () => {
     const res = await post("/admin/logout", { cookie });
     expect(res.status).toBe(303);
     expect((await get("/admin", cookie)).status).toBe(302);
+  });
+
+  it("odjava obrascem s istog origina prolazi", async () => {
+    const cookie = await cookieFor();
+    const res = await worker.fetch(`${BASE}/admin/logout`, {
+      method: "POST", redirect: "manual",
+      headers: { cookie, origin: BASE, "content-type": "application/x-www-form-urlencoded" },
+    });
+    expect(res.status).toBe(303);
+    expect(res.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 
   it("POST bez istog origina se odbija (CSRF)", async () => {

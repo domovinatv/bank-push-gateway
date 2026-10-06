@@ -63,7 +63,10 @@ admin.use("*", async (c, next) => {
     "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   );
   h.set("x-content-type-options", "nosniff");
-  h.set("referrer-policy", "no-referrer");
+  // Ne "no-referrer": uz nju preglednik na POST iz <form> šalje `Origin: null`
+  // i CSRF provjera ispod odbije vlastitu odjavu. "same-origin" i dalje ne
+  // šalje ništa izvan domene.
+  h.set("referrer-policy", "same-origin");
   h.set("x-frame-options", "DENY");
   if (!h.has("cache-control")) h.set("cache-control", "no-store");
 });
