@@ -20,13 +20,21 @@ Istraživanje: `donate.domovina.ai/docs/research/` (2026-10-06), sažetak u
 | `worker/` | `/ingest`: spremi sirovo → dedup → parser po banci → uparivanje → webhook |
 | `docs/` | arhitektura, sheme, nalazi po banci |
 
-Ništa od toga još ne postoji — plan je u [`docs/plan.md`](docs/plan.md), arhitektura u [`docs/architecture.md`](docs/architecture.md)
-za plan i redoslijed.
+Plan: [`docs/plan.md`](docs/plan.md). Arhitektura: [`docs/architecture.md`](docs/architecture.md).
+Kolektor: [`docs/collector-android.md`](docs/collector-android.md) (primarni),
+[`docs/collector-macrodroid.md`](docs/collector-macrodroid.md) (rezervni).
+Worker: [`worker/README.md`](worker/README.md).
 
 ## Status
 
 Faza 0: mod „samo bilježi" — skupiti stvarne obavijesti za svaku banku
 (obična i instant uplata) prije pisanja ijednog parsera.
+
+- ✅ Worker (`/ingest`, `/heartbeat`, `/health`), D1 shema, testovi — lokalno.
+- ✅ Android kolektor (Kotlin, bez ovisnosti), testiran na dva fizička uređaja
+  (Android 15 i 16) protiv lokalnog Workera preko `adb reverse`.
+- ⏳ Deploy Workera (čeka izbor Cloudflare računa).
+- ⏳ Test uplata PBZ ↔ HPB → `docs/banks/<banka>.md`.
 
 ## Licenca
 

@@ -18,7 +18,7 @@
 | Računi (IBAN, vlasnik, banka, package, channel_id) | `config/accounts.local.json` | ❌ (`config/accounts.example.json` je predložak) |
 | HMAC tajna po uređaju | `wrangler secret put DEVICE_SECRETS` / `worker/.dev.vars` lokalno | ❌ |
 | Pretplatnici webhooka (URL + tajna) | D1 tablica ili `wrangler secret` | ❌ |
-| Konfiguracija Android kolektora (endpoint, device_id, tajna, allowlist) | unos u aplikaciji ili `android/…/assets/config.local.json` | ❌ |
+| Konfiguracija Android kolektora (endpoint, device_id, tajna, allowlist) | SharedPreferences na telefonu (unos u aplikaciji; debug: adb intent) | ❌ |
 | Sirovi događaji | D1 (+ R2) u produkciji; `samples/raw/` lokalno | ❌ |
 | Anonimizirani fixturei za parsere | `worker/test/fixtures/` | ✅ |
 
@@ -30,8 +30,10 @@ Prije svakog commita: `git diff --cached` ne smije sadržavati `HR\d{19}`,
 ### Faza 0: samo bilježi
 - `worker/`: CF Worker s `POST /ingest` (HMAC provjera, D1 insert sirovog
   događaja, dedup po `device_id + seq`), `GET /health`, heartbeat endpoint.
-- Kolektor: najprije MacroDroid (okidač „Notification received" za allowlist
-  paketa → HTTP POST); dokumentirati recept u `docs/collector-macrodroid.md`.
+- Kolektor: vlastita aplikacija (`android/`, Kotlin, bez ovisnosti) odmah,
+  umjesto MacroDroida — HMAC, trajni red i retry od prvog dana
+  (`docs/collector-android.md`). MacroDroid ostaje rezervni recept s
+  token-autentikacijom (`docs/collector-macrodroid.md`).
 - Test: uplate po 1 € (obična i instant) između vlasnikovih računa
   (PBZ osobni → HPB poslovni i obrnuto); bilježiti vrijeme slanja.
 - Izlaz: `docs/banks/<banka>.md` s anonimiziranim primjerom obavijesti,
@@ -50,10 +52,10 @@ Prije svakog commita: `git diff --cached` ne smije sadržavati `HR\d{19}`,
 - Isti normalizirani format i za Monerium webhook i SMS izvor.
 
 ### Faza 3: pouzdanost
-- Vlastita Android aplikacija (fork `ItsAzni/NotificationForwarder`, MIT):
-  allowlist, sirovi `extras`, Room red, retry, HMAC, heartbeat,
-  isključena optimizacija baterije.
-- Cron: alarm kad heartbeat izostane; dnevno usklađivanje (izvod ili PSD2 AIS).
+- Android kolektor: osnovno je napravljeno u fazi 0 (vlastiti kod, ne fork).
+  Ostaje: foreground servis ili WorkManager za retry kad listener nije
+  spojen, release potpisivanje, provizioniranje tajne bez adb-a.
+- Cron: alarm kad heartbeat izostane > 15 min; dnevno usklađivanje (izvod ili PSD2 AIS).
 
 ## Otvoreno
 - Erste: postoji li ErsteConnect Premium webhook za manje klijente (ako da,
