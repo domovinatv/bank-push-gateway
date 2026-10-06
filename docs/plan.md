@@ -62,3 +62,7 @@ Prije svakog commita: `git diff --cached` ne smije sadržavati `HR\d{19}`,
   za Erste ne treba gateway).
 - Android 15 „sensitive notifications": cenzurira li obavijest o priljevu.
 - Jesu li push obavijesti za poslovne račune iste kao za osobne (po banci).
+
+## Vezani dokumenti
+- [Faza 0: postav, mjerenja i zamke (6.10.2026.)](2026-10-06-faza-0-postav-i-zamke.md)
+- [Android kolektor](collector-android.md), [MacroDroid](collector-macrodroid.md), [Admin](admin.md)

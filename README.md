@@ -24,6 +24,7 @@ Plan: [`docs/plan.md`](docs/plan.md). Arhitektura: [`docs/architecture.md`](docs
 Kolektor: [`docs/collector-android.md`](docs/collector-android.md) (primarni),
 [`docs/collector-macrodroid.md`](docs/collector-macrodroid.md) (rezervni).
 Worker: [`worker/README.md`](worker/README.md).
+Stanje, mjerenja i zamke faze 0: [`docs/2026-10-06-faza-0-postav-i-zamke.md`](docs/2026-10-06-faza-0-postav-i-zamke.md).
 
 ## Status
 
