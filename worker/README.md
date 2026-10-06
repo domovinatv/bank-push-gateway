@@ -67,7 +67,25 @@ npm run typecheck
 
 ## Deploy
 
-Još nije napravljen. Prije deploya: vlasnik bira Cloudflare račun, zatim
-`wrangler d1 create bank_push_gateway` (pravi `database_id` u
-`wrangler.jsonc`), `wrangler d1 migrations apply bank_push_gateway --remote`,
-`wrangler secret put DEVICE_SECRETS`, `wrangler deploy`.
+Produkcija (od 6.10.2026.): `https://bank-push-gateway.d-o-m.workers.dev`,
+Cloudflare račun D.O.M., D1 `bank_push_gateway` (regija eeur).
+
+```bash
+npx wrangler d1 migrations apply bank_push_gateway --remote   # nova migracija
+npx wrangler deploy
+```
+
+Tajne uređaja: `config/devices.local.json` (gitignored) → `DEVICE_SECRETS`:
+
+```bash
+node -e 'const d=require("../config/devices.local.json").devices;
+  process.stdout.write(JSON.stringify(Object.fromEntries(Object.entries(d).map(([k,v])=>[k,v.secret]))))' \
+  | npx wrangler secret put DEVICE_SECRETS
+```
+
+Pregled sirovih događaja:
+
+```bash
+npx wrangler d1 execute bank_push_gateway --remote \
+  --command "SELECT id, device_id, seq, package, received_at FROM raw_events ORDER BY id DESC LIMIT 20"
+```

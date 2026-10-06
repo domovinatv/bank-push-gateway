@@ -16,7 +16,7 @@
 | Podatak | Gdje | U gitu |
 |---|---|---|
 | Računi (IBAN, vlasnik, banka, package, channel_id) | `config/accounts.local.json` | ❌ (`config/accounts.example.json` je predložak) |
-| HMAC tajna po uređaju | `wrangler secret put DEVICE_SECRETS` / `worker/.dev.vars` lokalno | ❌ |
+| HMAC tajna po uređaju | `config/devices.local.json` → `wrangler secret put DEVICE_SECRETS`; `worker/.dev.vars` lokalno | ❌ |
 | Pretplatnici webhooka (URL + tajna) | D1 tablica ili `wrangler secret` | ❌ |
 | Konfiguracija Android kolektora (endpoint, device_id, tajna, allowlist) | SharedPreferences na telefonu (unos u aplikaciji; debug: adb intent) | ❌ |
 | Sirovi događaji | D1 (+ R2) u produkciji; `samples/raw/` lokalno | ❌ |

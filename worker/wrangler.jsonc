@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "bank-push-gateway",
+  "account_id": "7dc7167b7e2e00923bfa7cd697df14e4", // D.O.M.
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
@@ -13,9 +14,7 @@
     {
       "binding": "DB",
       "database_name": "bank_push_gateway",
-      // Placeholder za lokalni razvoj. Pravi ID tek nakon `wrangler d1 create`
-      // na računu koji odobri vlasnik.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "aae38cef-72fd-4f84-a2be-06253ddd12da",
       "migrations_dir": "migrations"
     }
   ]
