@@ -16,7 +16,6 @@ import {
   listConflicts,
   listEvents,
   listPasskeys,
-  PAGE_SIZE,
   STALE_HEARTBEAT_MINUTES,
 } from "./db";
 import { loginOptions, registrationOptions, verifyLogin, verifyRegistration } from "./passkey";
@@ -175,19 +174,17 @@ admin.post("/admin/logout", async (c) => {
 admin.get("/admin", async (c) => {
   const device = c.req.query("device") || undefined;
   const pkg = c.req.query("package") || undefined;
-  const beforeRaw = Number(c.req.query("before"));
-  const before = Number.isSafeInteger(beforeRaw) && beforeRaw > 0 ? beforeRaw : undefined;
-  const [events, filters] = await Promise.all([listEvents(c.env, { device, pkg, before }), filterValues(c.env)]);
+  const page = Number(c.req.query("page")) || 1;
+  const perPage = Number(c.req.query("per")) || undefined;
+  const [result, filters] = await Promise.all([listEvents(c.env, { device, pkg, page, perPage }), filterValues(c.env)]);
   return c.html(
     <EventsPage
       session={c.get("session")}
-      events={events}
+      result={result}
       devices={filters.devices}
       packages={filters.packages}
       device={device}
       pkg={pkg}
-      firstPage={!before}
-      nextBefore={events.length === PAGE_SIZE ? events[events.length - 1].id : null}
     />,
   );
 });

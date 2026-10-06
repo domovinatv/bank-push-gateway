@@ -4,7 +4,7 @@
 
 import type { Child } from "hono/jsx";
 import { raw } from "hono/html";
-import type { ConflictRow, DeviceStatus, EventSummary, PasskeyInfo } from "./db";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES, type ConflictRow, type DeviceStatus, type EventPage as EventPageData, type EventSummary, type PasskeyInfo } from "./db";
 import type { Session } from "./session";
 import { LOGO_SVG } from "./static";
 
@@ -113,26 +113,48 @@ export function LoginPage(props: { next: string; error?: string; accessConfigure
 
 export function EventsPage(props: {
   session: Session;
-  events: EventSummary[];
+  result: EventPageData;
   devices: string[];
   packages: string[];
   device?: string;
   pkg?: string;
-  firstPage: boolean;
-  nextBefore: number | null;
 }) {
-  const q = (extra: Record<string, string | undefined>) => {
+  const { events, total, page, pages, perPage } = props.result;
+  const firstPage = page === 1;
+  const q = (toPage: number) => {
     const p = new URLSearchParams();
-    for (const [k, v] of Object.entries({ device: props.device, package: props.pkg, ...extra })) {
-      if (v) p.set(k, v);
-    }
+    if (props.device) p.set("device", props.device);
+    if (props.pkg) p.set("package", props.pkg);
+    if (perPage !== DEFAULT_PAGE_SIZE) p.set("per", String(perPage));
+    if (toPage > 1) p.set("page", String(toPage));
     const s = p.toString();
     return s ? `/admin?${s}` : "/admin";
   };
+  const from = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const to = Math.min(page * perPage, total);
+  // Najviše 7 brojeva oko trenutne stranice.
+  const start = Math.max(1, Math.min(page - 3, pages - 6));
+  const numbers = Array.from({ length: Math.min(7, pages) }, (_, i) => start + i);
+  const Pager = () => (
+    <nav class="pager" aria-label="Stranice">
+      <span class="muted small">{from}–{to} od <span class="events-total">{total}</span></span>
+      {pages > 1 ? (
+        <>
+          {page > 1 ? <a class="button secondary" href={q(1)}>« Prva</a> : <span class="button secondary disabled">« Prva</span>}
+          {page > 1 ? <a class="button secondary" href={q(page - 1)}>‹ Novije</a> : <span class="button secondary disabled">‹ Novije</span>}
+          {numbers.map((n) =>
+            n === page ? <span class="button current" aria-current="page">{n}</span> : <a class="button secondary" href={q(n)}>{n}</a>,
+          )}
+          {page < pages ? <a class="button secondary" href={q(page + 1)}>Starije ›</a> : <span class="button secondary disabled">Starije ›</span>}
+          {page < pages ? <a class="button secondary" href={q(pages)}>Zadnja »</a> : <span class="button secondary disabled">Zadnja »</span>}
+        </>
+      ) : null}
+    </nav>
+  );
   return (
     <Layout title="Događaji" session={props.session} tab="events">
       <h1>Sirovi događaji</h1>
-      <p class="muted small">Novi događaji pojavljuju se odmah (WebSocket){props.firstPage ? "" : " — samo na prvoj stranici"}.</p>
+      <p class="muted small">Novi događaji pojavljuju se odmah (WebSocket){firstPage ? "" : " — samo na prvoj stranici"}.</p>
       <form class="filters" method="get" action="/admin">
         <label>Uređaj
           <select name="device">
@@ -146,8 +168,14 @@ export function EventsPage(props: {
             {props.packages.map((p) => <option value={p} selected={p === props.pkg}>{p}</option>)}
           </select>
         </label>
+        <label>Po stranici
+          <select name="per">
+            {PAGE_SIZES.map((n) => <option value={String(n)} selected={n === perPage}>{n}</option>)}
+          </select>
+        </label>
         <button type="submit">Primijeni</button>
       </form>
+      <Pager />
       <div class="table-wrap">
         <table>
           <thead>
@@ -158,14 +186,14 @@ export function EventsPage(props: {
           </thead>
           <tbody
             id="events-body"
-            data-live={props.firstPage ? "1" : "0"}
+            data-live={firstPage ? "1" : "0"}
             data-device={props.device ?? ""}
             data-package={props.pkg ?? ""}
           >
-            {props.events.length === 0 ? (
+            {events.length === 0 ? (
               <tr id="events-empty"><td colspan={7} class="muted">Nema događaja.</td></tr>
             ) : (
-              props.events.map((e) => (
+              events.map((e) => (
                 <tr>
                   <td class="nowrap"><a href={`/admin/events/${e.id}`}>{e.id}</a></td>
                   <td class="nowrap">{time(e.received_at)}</td>
@@ -180,9 +208,7 @@ export function EventsPage(props: {
           </tbody>
         </table>
       </div>
-      <div class="pager">
-        {props.nextBefore ? <a class="button secondary" href={q({ before: String(props.nextBefore) })}>Stariji →</a> : null}
-      </div>
+      <Pager />
     </Layout>
   );
 }

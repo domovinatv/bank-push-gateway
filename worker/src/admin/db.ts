@@ -50,21 +50,39 @@ export function summarize(row: EventRow): EventSummary {
   };
 }
 
-export const PAGE_SIZE = 50;
+export const PAGE_SIZES = [25, 50, 100, 200] as const;
+export const DEFAULT_PAGE_SIZE = 50;
 
+export interface EventPage {
+  events: EventSummary[];
+  total: number;
+  page: number;
+  pages: number;
+  perPage: number;
+}
+
+/** Stranica je 1-based; prevelika stranica se svodi na zadnju. */
 export async function listEvents(
   env: Env,
-  f: { device?: string; pkg?: string; before?: number },
-): Promise<EventSummary[]> {
+  f: { device?: string; pkg?: string; page?: number; perPage?: number },
+): Promise<EventPage> {
   const where: string[] = [];
   const binds: unknown[] = [];
   if (f.device) { where.push("device_id = ?"); binds.push(f.device); }
   if (f.pkg) { where.push("package = ?"); binds.push(f.pkg); }
-  if (f.before) { where.push("id < ?"); binds.push(f.before); }
-  const sql = `SELECT * FROM raw_events ${where.length ? "WHERE " + where.join(" AND ") : ""}
-               ORDER BY id DESC LIMIT ${PAGE_SIZE}`;
-  const rows = await env.DB.prepare(sql).bind(...binds).all<EventRow>();
-  return rows.results.map(summarize);
+  const whereSql = where.length ? "WHERE " + where.join(" AND ") : "";
+  const perPage = (PAGE_SIZES as readonly number[]).includes(f.perPage ?? 0) ? f.perPage! : DEFAULT_PAGE_SIZE;
+
+  const countRow = await env.DB.prepare(`SELECT COUNT(*) AS n FROM raw_events ${whereSql}`)
+    .bind(...binds).first<{ n: number }>();
+  const total = countRow?.n ?? 0;
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(Math.max(1, Math.floor(f.page ?? 1)), pages);
+
+  const rows = await env.DB.prepare(
+    `SELECT * FROM raw_events ${whereSql} ORDER BY id DESC LIMIT ? OFFSET ?`,
+  ).bind(...binds, perPage, (page - 1) * perPage).all<EventRow>();
+  return { events: rows.results.map(summarize), total, page, pages, perPage };
 }
 
 export async function getEvent(env: Env, id: number): Promise<EventSummary | null> {

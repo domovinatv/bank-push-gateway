@@ -63,7 +63,11 @@ dd { margin: 0; word-break: break-word; }
 .login .button, .login button { width: 100%; padding: .75rem; }
 .msg { padding: .6rem .8rem; border-radius: 6px; background: var(--surface); }
 .msg.bad { background: #FEF3F2; }
-.pager { margin-top: 1rem; display: flex; gap: .6rem; }
+.pager { margin: 1rem 0; display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+.pager .muted { margin-right: .6rem; }
+.pager .button { padding: .3rem .65rem; }
+.pager .button.current { background: var(--navy); color: #fff; }
+.pager .button.disabled { opacity: .35; pointer-events: none; }
 .live { font-weight: 700; }
 .live.on { color: var(--success); }
 .live.off { color: var(--muted); }
@@ -209,6 +213,7 @@ export const LIVE_JS = `
     tr.append(idTd, cell(time(e.received_at), "nowrap"), cell(e.device_id, "nowrap"), pkg,
       cell(e.title ?? "—"), cell(e.text ?? "—", "text"), cell(latency(e.latencyMs), "nowrap"));
     tbody.prepend(tr);
+    document.querySelectorAll(".events-total").forEach((el) => { el.textContent = String(Number(el.textContent) + 1); });
   }
 
   let reloadTimer = null;

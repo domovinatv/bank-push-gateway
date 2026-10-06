@@ -204,3 +204,47 @@ describe("safeNext", () => {
     expect(safeNext(undefined)).toBe("/admin");
   });
 });
+
+describe("admin: paginacija", () => {
+  async function seed(n: number, device = "gw-01") {
+    const stmts = Array.from({ length: n }, (_, i) =>
+      env.DB.prepare(
+        `INSERT INTO raw_events (device_id, seq, received_at, auth_method, content_type, body, body_sha256, package)
+         VALUES (?, ?, '2026-10-06T12:00:00.000Z', 'hmac', 'application/json', '{}', 'h', 'p')`,
+      ).bind(device, i + 1),
+    );
+    await env.DB.batch(stmts);
+  }
+  const rows = (html: string) => (html.match(/href="\/admin\/events\/\d+"/g) ?? []).length;
+
+  it("dijeli na stranice, prikazuje ukupno i svodi preveliku stranicu na zadnju", async () => {
+    await seed(60);
+    const cookie = await cookieFor();
+    const p1 = await (await get("/admin", cookie)).text();
+    expect(rows(p1)).toBe(50);
+    expect(p1).toContain("1–50 od <span class=\"events-total\">60</span>");
+    expect(p1).toContain('href="/admin?page=2"');
+    expect(p1).toContain('data-live="1"');
+
+    const p2 = await (await get("/admin?page=2", cookie)).text();
+    expect(rows(p2)).toBe(10);
+    expect(p2).toContain('data-live="0"');
+    expect(p2).toContain("51–60 od");
+
+    expect(rows(await (await get("/admin?page=99", cookie)).text())).toBe(10);
+    expect(rows(await (await get("/admin?page=-3", cookie)).text())).toBe(50);
+  });
+
+  it("veličina stranice samo s popisa, filter mijenja ukupno", async () => {
+    await seed(30, "gw-01");
+    await seed(5, "gw-02");
+    const cookie = await cookieFor();
+    const per25 = await (await get("/admin?per=25", cookie)).text();
+    expect(rows(per25)).toBe(25);
+    expect(per25).toContain('href="/admin?per=25&amp;page=2"');
+    expect(rows(await (await get("/admin?per=7", cookie)).text())).toBe(35); // nepoznato → 50
+    const filtered = await (await get("/admin?device=gw-02", cookie)).text();
+    expect(rows(filtered)).toBe(5);
+    expect(filtered).toContain("od <span class=\"events-total\">5</span>");
+  });
+});
