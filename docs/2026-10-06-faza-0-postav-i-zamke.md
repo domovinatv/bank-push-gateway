@@ -63,6 +63,8 @@ Na oba je debug build (`ai.domovina.bankpush.debug`), endpoint produkcija.
 | Android 15+ edge-to-edge (`targetSdk` 36) | gumbi ispod navigacijske trake | `setOnApplyWindowInsetsListener` na ScrollView |
 | wrangler OAuth token nema Access scope | ne može kreirati Access aplikaciju | API dashboarda iz prijavljenog taba (`fetch('/api/v4/accounts/<id>/access/apps', {headers: {'x-cross-site-security': 'dash'}})`) |
 | `adb install` | — | dozvola za obavijesti radi bez „Allow restricted settings"; dodjela i preko `cmd notification allow_listener` |
+| Admin CSS/JS keširan 5 min (`max-age=300`) | promjena stila ne stiže odmah | URL nosi `?v=<hash sadržaja>` (`ASSET_VERSION`) |
+| Hrvatski navodnici „…" u `git commit -m "…"` | `"` zatvori string, shell puca | poruku pisati u datoteku, `git commit -F` |
 | `am start -S` s novim endpointom | — | listener se ponovno spoji, red se pošalje na novi endpoint |
 
 ## Otvoreno
