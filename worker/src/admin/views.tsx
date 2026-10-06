@@ -70,6 +70,7 @@ function Layout(props: { title: string; session?: Session; tab?: Tab; refresh?: 
                 ))}
               </nav>
               <div class="who">
+                <span id="live-status" class="live off" title="Live veza">○ spajanje…</span>
                 <span>{props.session.email} · {props.session.method}</span>
                 <form method="post" action="/admin/logout">
                   <button class="secondary" type="submit">Odjava</button>
@@ -80,6 +81,7 @@ function Layout(props: { title: string; session?: Session; tab?: Tab; refresh?: 
         </header>
         <main>{props.children}</main>
         <script src="/admin/static/passkey.js" defer />
+        {props.session ? <script src="/admin/static/live.js" defer /> : null}
       </body>
     </html>
     </>
@@ -116,20 +118,21 @@ export function EventsPage(props: {
   packages: string[];
   device?: string;
   pkg?: string;
-  live: boolean;
+  firstPage: boolean;
   nextBefore: number | null;
 }) {
   const q = (extra: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
-    for (const [k, v] of Object.entries({ device: props.device, package: props.pkg, live: props.live ? "1" : undefined, ...extra })) {
+    for (const [k, v] of Object.entries({ device: props.device, package: props.pkg, ...extra })) {
       if (v) p.set(k, v);
     }
     const s = p.toString();
     return s ? `/admin?${s}` : "/admin";
   };
   return (
-    <Layout title="Događaji" session={props.session} tab="events" refresh={props.live ? 10 : undefined}>
+    <Layout title="Događaji" session={props.session} tab="events">
       <h1>Sirovi događaji</h1>
+      <p class="muted small">Novi događaji pojavljuju se odmah (WebSocket){props.firstPage ? "" : " — samo na prvoj stranici"}.</p>
       <form class="filters" method="get" action="/admin">
         <label>Uređaj
           <select name="device">
@@ -143,12 +146,6 @@ export function EventsPage(props: {
             {props.packages.map((p) => <option value={p} selected={p === props.pkg}>{p}</option>)}
           </select>
         </label>
-        <label>Osvježavanje
-          <select name="live">
-            <option value="">ručno</option>
-            <option value="1" selected={props.live}>svakih 10 s</option>
-          </select>
-        </label>
         <button type="submit">Primijeni</button>
       </form>
       <div class="table-wrap">
@@ -159,9 +156,14 @@ export function EventsPage(props: {
               <th>Naslov</th><th>Tekst</th><th title="received_at − captured_at">Kašnjenje</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody
+            id="events-body"
+            data-live={props.firstPage ? "1" : "0"}
+            data-device={props.device ?? ""}
+            data-package={props.pkg ?? ""}
+          >
             {props.events.length === 0 ? (
-              <tr><td colspan={7} class="muted">Nema događaja.</td></tr>
+              <tr id="events-empty"><td colspan={7} class="muted">Nema događaja.</td></tr>
             ) : (
               props.events.map((e) => (
                 <tr>
@@ -216,10 +218,10 @@ export function EventPage(props: { session: Session; event: EventSummary }) {
 
 export function DevicesPage(props: { session: Session; devices: DeviceStatus[]; staleMinutes: number }) {
   return (
-    <Layout title="Uređaji" session={props.session} tab="devices" refresh={30}>
+    <Layout title="Uređaji" session={props.session} tab="devices">
       <h1>Uređaji</h1>
-      <p class="muted small">Heartbeat stariji od {props.staleMinutes} min označen je crveno. Stranica se osvježava svakih 30 s.</p>
-      <div class="cards">
+      <p class="muted small">Heartbeat stariji od {props.staleMinutes} min označen je crveno. Stranica se osvježava na svaki heartbeat i događaj (WebSocket).</p>
+      <div class="cards" id="devices" data-live-reload="1">
         {props.devices.map((d) => {
           const hb = d.heartbeat ?? {};
           return (

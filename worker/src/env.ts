@@ -1,5 +1,8 @@
+import type { LiveFeed } from "./live";
+
 export interface Env {
   DB: D1Database;
+  LIVE_FEED: DurableObjectNamespace<LiveFeed>;
   DEVICE_SECRETS?: string;
   TOKEN_AUTH_DEVICES?: string;
   /** Zarezom odvojeni e-mailovi kojima je dopušten admin (i preko Accessa i passkeyem). */

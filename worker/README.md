@@ -8,6 +8,7 @@ Faza 0: samo bilježi. Ne parsira tekst obavijesti.
 | `POST /ingest` | HMAC (ili token, vidi `docs/collector-macrodroid.md`) | sprema tijelo bajt za bajt u `raw_events`; dedup po `(device_id, seq)` |
 | `POST /heartbeat` | isto | zapis u `heartbeats` |
 | `/admin/*` | passkey ili Cloudflare Access | pregled događaja, uređaja, konflikata — vidi [`docs/admin.md`](../docs/admin.md) |
+| `/admin/live` | isto + `Origin` | WebSocket; novi događaji i heartbeati uživo (Durable Object `LiveFeed`) |
 
 `/ingest` prima `application/json` ili `application/x-www-form-urlencoded`
 s obaveznim cijelim `seq`. Odgovori:

@@ -1,10 +1,13 @@
 // Faza 0: samo bilježi. Worker ne parsira tekst obavijesti banke.
 
 import { admin } from "./admin/app";
+import { summarize, type EventRow } from "./admin/db";
+import { liveFeed } from "./live";
 import { authenticate, parseDeviceSecrets, sha256Hex, type AuthMethod } from "./auth";
 import type { Env } from "./env";
 
 export type { Env } from "./env";
+export { LiveFeed } from "./live";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -22,9 +25,9 @@ export default {
         case "GET /health":
           return await health(env);
         case "POST /ingest":
-          return await withAuth(request, env, ingest);
+          return await withAuth(request, env, ctx, ingest);
         case "POST /heartbeat":
-          return await withAuth(request, env, heartbeat);
+          return await withAuth(request, env, ctx, heartbeat);
         default:
           return json({ error: "not_found" }, 404);
       }
@@ -37,6 +40,7 @@ export default {
 
 type AuthedHandler = (ctx: {
   env: Env;
+  exec: ExecutionContext;
   deviceId: string;
   method: AuthMethod;
   contentType: string;
@@ -44,7 +48,7 @@ type AuthedHandler = (ctx: {
   envelope: Envelope;
 }) => Promise<Response>;
 
-async function withAuth(request: Request, env: Env, handler: AuthedHandler): Promise<Response> {
+async function withAuth(request: Request, env: Env, exec: ExecutionContext, handler: AuthedHandler): Promise<Response> {
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
   if (declaredLength > MAX_BODY_BYTES) return json({ error: "body_too_large" }, 413);
   const body = await request.text();
@@ -74,7 +78,7 @@ async function withAuth(request: Request, env: Env, handler: AuthedHandler): Pro
     return json({ error: "device_id_mismatch" }, 400);
   }
 
-  return handler({ env, deviceId: auth.deviceId, method: auth.method, contentType, body, envelope });
+  return handler({ env, exec, deviceId: auth.deviceId, method: auth.method, contentType, body, envelope });
 }
 
 // Čita samo omotnicu (seq, package, captured_at). Sadržaj obavijesti ostaje sirov u `body`.
@@ -102,7 +106,7 @@ function optString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value.slice(0, 256) : null;
 }
 
-const ingest: AuthedHandler = async ({ env, deviceId, method, contentType, body, envelope }) => {
+const ingest: AuthedHandler = async ({ env, exec, deviceId, method, contentType, body, envelope }) => {
   const seq = parseSeq(envelope.seq);
   if (seq === null) return json({ error: "bad_seq", expected: "non-negative integer" }, 400);
 
@@ -120,7 +124,16 @@ const ingest: AuthedHandler = async ({ env, deviceId, method, contentType, body,
       optString(envelope.package), optString(envelope.captured_at))
     .first<{ id: number }>();
 
-  if (inserted) return json({ status: "stored", id: inserted.id, seq }, 201);
+  if (inserted) {
+    const row: EventRow = {
+      id: inserted.id, device_id: deviceId, seq, received_at: receivedAt, auth_method: method,
+      content_type: contentType, body, body_sha256: bodySha,
+      package: optString(envelope.package), captured_at: optString(envelope.captured_at),
+    };
+    const { body: _raw, ...event } = summarize(row);
+    notifyAdmins(env, exec, { type: "event", event });
+    return json({ status: "stored", id: inserted.id, seq }, 201);
+  }
 
   const existing = await env.DB.prepare(
     "SELECT id, body_sha256 FROM raw_events WHERE device_id = ? AND seq = ?",
@@ -145,13 +158,24 @@ const ingest: AuthedHandler = async ({ env, deviceId, method, contentType, body,
   return json({ status: "seq_conflict_stored", conflict_id: conflict?.id, seq }, 200);
 };
 
-const heartbeat: AuthedHandler = async ({ env, deviceId, body }) => {
+const heartbeat: AuthedHandler = async ({ env, exec, deviceId, body, envelope }) => {
   const receivedAt = new Date().toISOString();
   await env.DB.prepare("INSERT INTO heartbeats (device_id, received_at, body) VALUES (?, ?, ?)")
     .bind(deviceId, receivedAt, body)
     .run();
+  notifyAdmins(env, exec, { type: "heartbeat", device_id: deviceId, received_at: receivedAt, heartbeat: envelope });
   return json({ status: "ok", received_at: receivedAt }, 200);
 };
+
+// Live prikaz u adminu. Nakon odgovora telefonu; greška ovdje ne smije
+// utjecati na primitak (događaj je već u D1).
+function notifyAdmins(env: Env, exec: ExecutionContext, message: unknown): void {
+  exec.waitUntil(
+    liveFeed(env)
+      .broadcast(JSON.stringify(message))
+      .catch((err) => console.warn(JSON.stringify({ msg: "live_broadcast_failed", err: String(err) }))),
+  );
+}
 
 async function health(env: Env): Promise<Response> {
   try {

@@ -31,6 +31,36 @@ flowchart LR
   Sess --> A[/admin/]
 ```
 
+## Live prikaz (WebSocket)
+
+```mermaid
+flowchart LR
+  T[telefon] -->|POST /ingest, /heartbeat| W[Worker]
+  W -->|INSERT| D[(D1)]
+  W -.->|waitUntil: broadcast RPC| DO[Durable Object LiveFeed]
+  B[admin u pregledniku] <-->|wss /admin/live| DO
+```
+
+- **Jedan Durable Object** (`LiveFeed`, `idFromName("admin")`) drži sve otvorene
+  admin veze. Bez njega `/ingest` i WebSocket završe u različitim instancama
+  Workera i ne mogu razgovarati.
+- **WebSocket Hibernation API:** DO ne drži memoriju ni naplatu dok veze
+  miruju; budi se samo na broadcast. Klijentov `ping` svakih 30 s odgovara se
+  bez buđenja (`setWebSocketAutoResponse`).
+- **Broadcast ide nakon odgovora telefonu** (`ctx.waitUntil`): greška u live
+  prikazu ne utječe na primitak, događaj je već u D1.
+- Šalje se **sažetak** (id, uređaj, paket, naslov, tekst, kašnjenje), ne cijelo
+  sirovo tijelo; cijelo je na `/admin/events/:id`.
+- Duplikat (`200 duplicate`) ne šalje poruku.
+- **Auth:** upgrade zahtjev nosi isti kolačić sesije; Worker provjerava
+  sesiju **i** `Origin` (WebSocket nema CORS, pa bez toga tuđa stranica može
+  otvoriti vezu s tvojim kolačićem — CSWSH). Uz vezu se pamti istek sesije;
+  istekla veza se zatvara kodom 4401 i stranica se ponovno učita.
+- **Klijent** (`/admin/static/live.js`) gradi retke samo preko `textContent`.
+  Na stranici Uređaji svaka poruka znači ponovno učitavanje (debounce 0,8 s).
+  Prekid veze → ponovno spajanje s eksponencijalnim čekanjem do 30 s.
+- Live radi samo na prvoj stranici liste i poštuje filter uređaja/paketa.
+
 ## Sigurnost
 
 | Mjera | Gdje |
@@ -40,7 +70,9 @@ flowchart LR
 | CSRF: svaki POST mora imati `Origin` jednak originu admina | `src/admin/app.tsx` |
 | WebAuthn izazov jednokratan, 5 min, vezan uz svrhu (login/register) i e-mail | `consumeChallenge` |
 | `rpID` = hostname zahtjeva: passkey s localhosta ne otvara produkciju | `src/admin/passkey.ts` |
-| CSP `script-src 'self'` (bez inline skripti), `frame-ancestors 'none'`, `no-store` | middleware |
+| CSP `script-src 'self'` (bez inline skripti), `connect-src 'self' wss://<host>`, `frame-ancestors 'none'`, `no-store` | middleware |
+| `Referrer-Policy: same-origin` — ne `no-referrer`, jer tada preglednik na `<form>` POST šalje `Origin: null` | middleware |
+| WebSocket `/admin/live`: sesija + `Origin` | `src/admin/app.tsx` |
 | Otvoreno preusmjeravanje: `next` samo `/admin…` | `safeNext` |
 | Access JWT: RS256, issuer `https://<team>.cloudflareaccess.com`, AUD | `src/admin/access.ts` |
 

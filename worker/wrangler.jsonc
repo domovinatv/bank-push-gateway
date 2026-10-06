@@ -22,6 +22,10 @@
     "ACCESS_TEAM_DOMAIN": "domovina.cloudflareaccess.com",
     "ACCESS_AUD": "785015c8d0d4562a90727173185271600478ae862f12b5a8bb8da38266529264"
   },
+  "durable_objects": {
+    "bindings": [{ "name": "LIVE_FEED", "class_name": "LiveFeed" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LiveFeed"] }],
   "d1_databases": [
     {
       "binding": "DB",

@@ -30,7 +30,8 @@ import {
   sessionCookie,
   type Session,
 } from "./session";
-import { ADMIN_CSS, PASSKEY_JS } from "./static";
+import { liveFeed } from "../live";
+import { ADMIN_CSS, LIVE_JS, PASSKEY_JS } from "./static";
 import {
   ConflictsPage,
   DevicesPage,
@@ -52,15 +53,17 @@ const PUBLIC_PATHS = new Set([
   "/admin/passkey/login/verify",
   "/admin/static/admin.css",
   "/admin/static/passkey.js",
+  "/admin/static/live.js",
 ]);
 
 // Sigurnosna zaglavlja na svemu pod /admin.
 admin.use("*", async (c, next) => {
   await next();
+  if (c.res.status === 101) return;
   const h = c.res.headers;
   h.set(
     "content-security-policy",
-    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+    `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' wss://${new URL(c.req.url).host}; form-action 'self'; frame-ancestors 'none'; base-uri 'none'`,
   );
   h.set("x-content-type-options", "nosniff");
   // Ne "no-referrer": uz nju preglednik na POST iz <form> šalje `Origin: null`
@@ -86,7 +89,7 @@ admin.use("*", async (c, next) => {
   if (PUBLIC_PATHS.has(path)) return next();
   const session = await getSession(c.env, c.req.header("cookie") ?? null);
   if (!session) {
-    if (c.req.method !== "GET") return c.json({ error: "unauthorized" }, 401);
+    if (c.req.method !== "GET" || c.req.header("upgrade")) return c.json({ error: "unauthorized" }, 401);
     const next = path + new URL(c.req.url).search;
     return c.redirect(`/admin/login?next=${encodeURIComponent(next)}`, 302);
   }
@@ -96,6 +99,9 @@ admin.use("*", async (c, next) => {
 
 admin.get("/admin/static/admin.css", (c) =>
   c.body(ADMIN_CSS, 200, { "content-type": "text/css; charset=utf-8", "cache-control": "public, max-age=300" }),
+);
+admin.get("/admin/static/live.js", (c) =>
+  c.body(LIVE_JS, 200, { "content-type": "text/javascript; charset=utf-8", "cache-control": "public, max-age=300" }),
 );
 admin.get("/admin/static/passkey.js", (c) =>
   c.body(PASSKEY_JS, 200, { "content-type": "text/javascript; charset=utf-8", "cache-control": "public, max-age=300" }),
@@ -180,7 +186,7 @@ admin.get("/admin", async (c) => {
       packages={filters.packages}
       device={device}
       pkg={pkg}
-      live={c.req.query("live") === "1"}
+      firstPage={!before}
       nextBefore={events.length === PAGE_SIZE ? events[events.length - 1].id : null}
     />,
   );
@@ -192,6 +198,18 @@ admin.get("/admin/events/:id", async (c) => {
   const event = Number.isSafeInteger(id) ? await getEvent(c.env, id) : null;
   if (!event) return c.text("Događaj ne postoji.", 404);
   return c.html(<EventPage session={c.get("session")} event={event} />);
+});
+
+// WebSocket za live prikaz. Preglednik uz upgrade šalje kolačić, pa vrijedi
+// ista sesija; Origin se provjerava jer WebSocket nema CORS zaštitu (CSWSH).
+admin.get("/admin/live", async (c) => {
+  if (c.req.header("upgrade")?.toLowerCase() !== "websocket") return c.text("expected websocket", 426);
+  if (c.req.header("origin") !== new URL(c.req.url).origin) return c.json({ error: "bad_origin" }, 403);
+  const session = c.get("session");
+  const headers = new Headers(c.req.raw.headers);
+  headers.set("x-admin-email", session.email);
+  headers.set("x-admin-session-expires", session.expiresAt);
+  return liveFeed(c.env).fetch(new Request(c.req.url, { headers }));
 });
 
 admin.get("/admin/devices", async (c) =>
