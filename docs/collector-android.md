@@ -60,7 +60,7 @@ adb -s <serial> shell am start -n ai.domovina.bankpush.debug/ai.domovina.bankpus
 adb -s <serial> logcat -s BankPush
 ```
 
-Prema produkciji: isti `am start`, ali `--es endpoint https://bank-push-gateway.d-o-m.workers.dev`
+Prema produkciji: isti `am start`, ali `--es endpoint https://bank-push-gateway.domovina.ai`
 i tajna iz `config/devices.local.json`.
 
 Prikaz zaslona telefona na laptopu: `scrcpy -s <serial> --stay-awake`.

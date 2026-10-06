@@ -5,6 +5,12 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
+  // Jedan javni endpoint; workers.dev isključen.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "bank-push-gateway.domovina.ai", "custom_domain": true }
+  ],
   "vars": {
     // Uređaji kojima je dopuštena autentikacija tokenom umjesto HMAC-a
     // (MacroDroid ne može potpisati tijelo zahtjeva). Zarezom odvojeno.

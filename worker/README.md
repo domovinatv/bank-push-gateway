@@ -67,7 +67,7 @@ npm run typecheck
 
 ## Deploy
 
-Produkcija (od 6.10.2026.): `https://bank-push-gateway.d-o-m.workers.dev`,
+Produkcija (od 6.10.2026.): `https://bank-push-gateway.domovina.ai`,
 Cloudflare račun D.O.M., D1 `bank_push_gateway` (regija eeur).
 
 ```bash

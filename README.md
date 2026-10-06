@@ -33,7 +33,7 @@ Faza 0: mod „samo bilježi" — skupiti stvarne obavijesti za svaku banku
 - ✅ Worker (`/ingest`, `/heartbeat`, `/health`), D1 shema, testovi — lokalno.
 - ✅ Android kolektor (Kotlin, bez ovisnosti), testiran na dva fizička uređaja
   (Android 15 i 16) protiv lokalnog Workera preko `adb reverse`.
-- ✅ Worker u produkciji: `https://bank-push-gateway.d-o-m.workers.dev` (CF račun D.O.M.);
+- ✅ Worker u produkciji: `https://bank-push-gateway.domovina.ai` (CF račun D.O.M.);
   oba telefona šalju na nju (`gw-01` edge 30 ultra s HPB-om, `gw-02` moto g86).
 - ⏳ Test uplata PBZ ↔ HPB → `docs/banks/<banka>.md`.
 
