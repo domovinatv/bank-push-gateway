@@ -6,7 +6,7 @@ import type { Child } from "hono/jsx";
 import { raw } from "hono/html";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES, type ConflictRow, type DeviceStatus, type EventPage as EventPageData, type EventSummary, type PasskeyInfo } from "./db";
 import type { Session } from "./session";
-import { LOGO_SVG } from "./static";
+import { ASSET_VERSION, LOGO_SVG } from "./static";
 
 const fmt = new Intl.DateTimeFormat("hr-HR", {
   timeZone: "Europe/Zagreb",
@@ -53,7 +53,7 @@ function Layout(props: { title: string; session?: Session; tab?: Tab; refresh?: 
         <meta name="robots" content="noindex, nofollow" />
         {props.refresh ? <meta http-equiv="refresh" content={String(props.refresh)} /> : null}
         <title>{props.title} · Bank Push Gateway</title>
-        <link rel="stylesheet" href="/admin/static/admin.css" />
+        <link rel="stylesheet" href={`/admin/static/admin.css?v=${ASSET_VERSION}`} />
       </head>
       <body>
         <div class="tricolor"><span class="red" /><span class="white" /><span class="navy" /></div>
@@ -80,8 +80,8 @@ function Layout(props: { title: string; session?: Session; tab?: Tab; refresh?: 
           ) : null}
         </header>
         <main>{props.children}</main>
-        <script src="/admin/static/passkey.js" defer />
-        {props.session ? <script src="/admin/static/live.js" defer /> : null}
+        <script src={`/admin/static/passkey.js?v=${ASSET_VERSION}`} defer />
+        {props.session ? <script src={`/admin/static/live.js?v=${ASSET_VERSION}`} defer /> : null}
       </body>
     </html>
     </>
@@ -135,11 +135,11 @@ export function EventsPage(props: {
   // Najviše 7 brojeva oko trenutne stranice.
   const start = Math.max(1, Math.min(page - 3, pages - 6));
   const numbers = Array.from({ length: Math.min(7, pages) }, (_, i) => start + i);
-  const Pager = () => (
-    <nav class="pager" aria-label="Stranice">
-      <span class="muted small">{from}–{to} od <span class="events-total">{total}</span></span>
+  const Pager = (p: { position: "top" | "bottom" }) => (
+    <nav class={`pager pager-${p.position}`} aria-label="Stranice">
+      <span class="count">{from}–{to} od <span class="events-total">{total}</span></span>
       {pages > 1 ? (
-        <>
+        <div class="pages">
           {page > 1 ? <a class="button secondary" href={q(1)}>« Prva</a> : <span class="button secondary disabled">« Prva</span>}
           {page > 1 ? <a class="button secondary" href={q(page - 1)}>‹ Novije</a> : <span class="button secondary disabled">‹ Novije</span>}
           {numbers.map((n) =>
@@ -147,7 +147,7 @@ export function EventsPage(props: {
           )}
           {page < pages ? <a class="button secondary" href={q(page + 1)}>Starije ›</a> : <span class="button secondary disabled">Starije ›</span>}
           {page < pages ? <a class="button secondary" href={q(pages)}>Zadnja »</a> : <span class="button secondary disabled">Zadnja »</span>}
-        </>
+        </div>
       ) : null}
     </nav>
   );
@@ -175,7 +175,7 @@ export function EventsPage(props: {
         </label>
         <button type="submit">Primijeni</button>
       </form>
-      <Pager />
+      <Pager position="top" />
       <div class="table-wrap">
         <table>
           <thead>
@@ -208,7 +208,7 @@ export function EventsPage(props: {
           </tbody>
         </table>
       </div>
-      <Pager />
+      <Pager position="bottom" />
     </Layout>
   );
 }

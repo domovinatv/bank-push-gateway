@@ -63,9 +63,13 @@ dd { margin: 0; word-break: break-word; }
 .login .button, .login button { width: 100%; padding: .75rem; }
 .msg { padding: .6rem .8rem; border-radius: 6px; background: var(--surface); }
 .msg.bad { background: #FEF3F2; }
-.pager { margin: 1rem 0; display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
-.pager .muted { margin-right: .6rem; }
-.pager .button { padding: .3rem .65rem; }
+.pager { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.pager-top { margin: 0 0 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.pager-bottom { margin: 1.25rem 0 0; }
+.pager .count { color: var(--muted); font-size: .85rem; }
+.pager .count .events-total { color: var(--navy); font-weight: 700; }
+.pager .pages { display: flex; gap: .35rem; flex-wrap: wrap; }
+.pager .button { padding: .3rem .65rem; font-size: .85rem; min-width: 2.2rem; text-align: center; }
 .pager .button.current { background: var(--navy); color: #fff; }
 .pager .button.disabled { opacity: .35; pointer-events: none; }
 .live { font-weight: 700; }
@@ -252,3 +256,11 @@ export const LIVE_JS = `
   connect();
 })();
 `;
+
+// Kratki hash sadržaja za ?v= u URL-u: nova verzija zaobilazi cache preglednika.
+function shortHash(text: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return (h >>> 0).toString(36);
+}
+export const ASSET_VERSION = shortHash(ADMIN_CSS + PASSKEY_JS + LIVE_JS);
