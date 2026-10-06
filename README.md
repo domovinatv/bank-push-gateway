@@ -35,6 +35,7 @@ Faza 0: mod „samo bilježi" — skupiti stvarne obavijesti za svaku banku
   (Android 15 i 16) protiv lokalnog Workera preko `adb reverse`.
 - ✅ Worker u produkciji: `https://bank-push-gateway.domovina.ai` (CF račun D.O.M.);
   oba telefona šalju na nju (`gw-01` edge 30 ultra s HPB-om, `gw-02` moto g86).
+- ✅ Admin: `https://bank-push-gateway.domovina.ai/admin` (passkey ili Cloudflare Access), [`docs/admin.md`](docs/admin.md).
 - ⏳ Test uplata PBZ ↔ HPB → `docs/banks/<banka>.md`.
 
 ## Licenca

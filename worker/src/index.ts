@@ -1,20 +1,21 @@
 // Faza 0: samo bilježi. Worker ne parsira tekst obavijesti banke.
 
+import { admin } from "./admin/app";
 import { authenticate, parseDeviceSecrets, sha256Hex, type AuthMethod } from "./auth";
+import type { Env } from "./env";
 
-export interface Env {
-  DB: D1Database;
-  DEVICE_SECRETS?: string;
-  TOKEN_AUTH_DEVICES?: string;
-}
+export type { Env } from "./env";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
 type Envelope = Record<string, unknown>;
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
+      return admin.fetch(request, env, ctx);
+    }
     const route = `${request.method} ${url.pathname}`;
     try {
       switch (route) {

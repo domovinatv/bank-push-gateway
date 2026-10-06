@@ -14,7 +14,13 @@
   "vars": {
     // Uređaji kojima je dopuštena autentikacija tokenom umjesto HMAC-a
     // (MacroDroid ne može potpisati tijelo zahtjeva). Zarezom odvojeno.
-    "TOKEN_AUTH_DEVICES": ""
+    "TOKEN_AUTH_DEVICES": "",
+    // Admin: tko smije u /admin (i preko Accessa i passkeyem).
+    "ADMIN_EMAILS": "stepanic.matija@gmail.com,ms@ff.hr",
+    // Cloudflare Access aplikacija na bank-push-gateway.domovina.ai/admin/sso.
+    // Prazno = ulaz preko Accessa isključen.
+    "ACCESS_TEAM_DOMAIN": "domovina.cloudflareaccess.com",
+    "ACCESS_AUD": "785015c8d0d4562a90727173185271600478ae862f12b5a8bb8da38266529264"
   },
   "d1_databases": [
     {

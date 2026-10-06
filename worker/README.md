@@ -7,6 +7,7 @@ Faza 0: samo bilježi. Ne parsira tekst obavijesti.
 | `GET /health` | — | `{"ok":true,"db":"ok"}` |
 | `POST /ingest` | HMAC (ili token, vidi `docs/collector-macrodroid.md`) | sprema tijelo bajt za bajt u `raw_events`; dedup po `(device_id, seq)` |
 | `POST /heartbeat` | isto | zapis u `heartbeats` |
+| `/admin/*` | passkey ili Cloudflare Access | pregled događaja, uređaja, konflikata — vidi [`docs/admin.md`](../docs/admin.md) |
 
 `/ingest` prima `application/json` ili `application/x-www-form-urlencoded`
 s obaveznim cijelim `seq`. Odgovori:
@@ -61,7 +62,7 @@ curl -X POST localhost:8787/ingest -H 'content-type: application/json' \
 ## Testovi
 
 ```bash
-npm test          # vitest u workerd runtimeu (HMAC, dedup, konflikti, auth)
+npm test          # vitest u workerd runtimeu (HMAC, dedup, konflikti, admin auth, XSS)
 npm run typecheck
 ```
 
