@@ -46,6 +46,10 @@ Prije svakog commita: `git diff --cached` ne smije sadržavati `HR\d{19}`,
 - Pre-commit hook za IBAN/imena.
 
 ### Faza 2: uparivanje + webhook
+- Prvi pretplatnik: MPT rail kao „payment listener“ za hrvatski IBAN, **bez minta** —
+  pay.domovina.ai [ADR 0020](https://github.com/domovinatv/pay.domovina.ai/blob/main/docs/decisions/0020-hr-iban-listener-bez-minta.md).
+  Test 11.10.2026.: PBZ, HPB, RBA i Aircash čitaju HUB3, ali uplatu puštaju samo
+  na HR IBAN, pa je ovaj gateway jedini brzi izvor dojave za taj kanal.
 - Otvorene donacije s jedinstvenim iznosom (1,00 / 1,01 / …) i TTL-om, ili
   poziv na broj ako ga banka prenosi.
 - Potpisani `account.credit` webhook pretplatnicima (MPT / donate / pay).
@@ -64,5 +68,6 @@ Prije svakog commita: `git diff --cached` ne smije sadržavati `HR\d{19}`,
 - Jesu li push obavijesti za poslovne račune iste kao za osobne (po banci).
 
 ## Vezani dokumenti
+- pay.domovina.ai [ADR 0020 — MPT listener za HR IBAN](https://github.com/domovinatv/pay.domovina.ai/blob/main/docs/decisions/0020-hr-iban-listener-bez-minta.md), [HUB3 format i test u bankama](https://github.com/domovinatv/pay.domovina.ai/blob/main/docs/research/aircash/05-hub3-format-provjera.md)
 - [Faza 0: postav, mjerenja i zamke (6.10.2026.)](2026-10-06-faza-0-postav-i-zamke.md)
 - [Android kolektor](collector-android.md), [MacroDroid](collector-macrodroid.md), [Admin](admin.md)
