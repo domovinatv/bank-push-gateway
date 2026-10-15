@@ -13,10 +13,27 @@ const MAX_BODY_BYTES = 64 * 1024;
 
 type Envelope = Record<string, unknown>;
 
+const isAdminPath = (path: string) => path === "/admin" || path.startsWith("/admin/");
+
+function decodePath(path: string): string {
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
+    // Enkodirani oblik admin putanje (`/%61dmin/…`) se ne prihvaća: router ga
+    // dekodira, a provjere na sirovom URL-u ne — tako je 14.10.2026. probijen
+    // admin u payu i pipelineu (docs/admin.md → Sigurnost).
+    if (isAdminPath(decodePath(url.pathname)) && decodePath(url.pathname) !== url.pathname) {
+      console.warn(JSON.stringify({ msg: "admin_encoded_path_rejected", path: url.pathname.slice(0, 200) }));
+      return json({ error: "bad_path" }, 400);
+    }
+    if (isAdminPath(url.pathname)) {
       return admin.fetch(request, env, ctx);
     }
     const route = `${request.method} ${url.pathname}`;

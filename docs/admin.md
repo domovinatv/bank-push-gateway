@@ -93,6 +93,10 @@ Ovaj worker **nije ranjiv** (provjereno na produkciji 15.10.: `/%61dmin/`,
 2. Unutar admina auth je **deny-by-default**: preskače samo točne nizove iz
    `PUBLIC_PATHS` (bez `%`), sve ostalo traži sesiju.
 
+Svejedno otvrdnuto 15.10. (isto kao pay/pipeline): `src/index.ts` odbija enkodirani
+oblik admin putanje s 400 (`admin_encoded_path_rejected` u logu), a auth u
+`src/admin/app.tsx` gleda `c.req.path`.
+
 **Ne mijenjati** u „auth samo ako putanja počinje s `/admin`" na razini cijelog
 Hono appa (kako je bilo u payu) — to je točno ta rupa. Ako se ikad uvodi takva
 provjera, raditi je na `c.req.path` (isto što vidi router), nikad na sirovom URL-u.

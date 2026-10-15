@@ -84,7 +84,8 @@ admin.use("*", async (c, next) => {
 
 // Auth: sve osim javnih putanja traži sesiju.
 admin.use("*", async (c, next) => {
-  const path = new URL(c.req.url).pathname;
+  // c.req.path = putanja kako je vidi router (dekodirana), ne sirovi URL.
+  const path = c.req.path;
   if (PUBLIC_PATHS.has(path)) return next();
   const session = await getSession(c.env, c.req.header("cookie") ?? null);
   if (!session) {
