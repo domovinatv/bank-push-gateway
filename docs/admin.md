@@ -76,6 +76,27 @@ flowchart LR
 | Otvoreno preusmjeravanje: `next` samo `/admin…` | `safeNext` |
 | Access JWT: RS256, issuer `https://<team>.cloudflareaccess.com`, AUD | `src/admin/access.ts` |
 
+### Percent-enkodirana putanja (`/%61dmin/`) — ovdje NIJE iskoristivo, ali je zamka
+
+14.10.2026. vanjski napadač (77.91.100.31) je u `pipeline.domovina.ai` i
+`mpt.domovina.ai` (pay) zaobišao admin prijavu s `/%61dmin/...`. Ti adminima je
+middleware gledao `new URL(c.req.url).pathname` (ostaje enkodiran, pa „nije admin"
+→ preskoči auth), a Hono router putanju dekodira i izvrši `/admin` rutu. Popravljeno
+15.10. (pipeline `96fef04`, pay `0e7ceeb`): sve provjere na `c.req.path`, enkodirana
+admin putanja → 400. Postmortem: `pay.domovina.ai/docs/postmortems/0002-…`.
+
+Ovaj worker **nije ranjiv** (provjereno na produkciji 15.10.: `/%61dmin/`,
+`/adm%69n/api/events` → 404; `/admin/%70asskeys` → 302 na prijavu), iz dva razloga:
+
+1. `src/index.ts` šalje u admin app samo ako je **sirova** putanja `/admin…`; sve
+   ostalo ide u `switch` s točnim nizovima → enkodirani oblik završi u 404.
+2. Unutar admina auth je **deny-by-default**: preskače samo točne nizove iz
+   `PUBLIC_PATHS` (bez `%`), sve ostalo traži sesiju.
+
+**Ne mijenjati** u „auth samo ako putanja počinje s `/admin`" na razini cijelog
+Hono appa (kako je bilo u payu) — to je točno ta rupa. Ako se ikad uvodi takva
+provjera, raditi je na `c.req.path` (isto što vidi router), nikad na sirovom URL-u.
+
 ## Konfiguracija
 
 `worker/wrangler.jsonc` → `vars` (nisu tajne):
